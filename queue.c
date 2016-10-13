@@ -28,7 +28,7 @@ void print_queue(int queue[], int tail, int head)
 
 	for (i = head; i < tail; i++)
 	{
-		printf("%d", queue[i]);
+		printf("%d ", queue[i]);
 	}
 	printf("\n");
 

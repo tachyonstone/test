@@ -15,14 +15,16 @@ void print_array(int array[], int num)
 
 }
 
-void express(int a[][2], int express_node[], int num)
+void express(int a[], int express_node[], int num)
 {
-	int i, k;
+	int i, k, l;
 
-	for (i = 0; i < num; i++)
+	for (i = 1; i < num; i++)
 	{
-		k = a[i][1];
-		express_node[k] = a[i][0];
+		k = a[i-1];
+		l = a[i];
+
+		express_node[l] = k;
 
 	}
 
@@ -34,15 +36,15 @@ void express(int a[][2], int express_node[], int num)
 int main(void)
 {
 
-	int a[][2] ={{2,4}, {4,1}, {1,0}, {0,3}};
-	int express_node[] = {-1,-1,-1,-1};
+	int a[] ={2,4,1,0,3};
+	int express_node[] = {-1,-1,-1,-1,-1};
 
 	int num;
 
 	num = sizeof(a)/sizeof(a[0]);
 
 	express(a, express_node, num);
-	print_array(express_node, num+1);
+	print_array(express_node, num);
 
 	return 0;
 
