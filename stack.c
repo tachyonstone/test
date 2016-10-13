@@ -2,38 +2,6 @@
 
 #define MAX 64
 
-void push(int stack[], int *size, int n);
-void pop(int *size);
-void print_stack(int stack[], int size);
-
-
-int main(void)
-{
-	
-	int n;
-
-	int size = 0;
-	int stack[MAX];
-
-	n = 3;
-	push(stack, &size, n);
-	print_stack(stack, size);
-
-	n = 1;
-	push(stack, &size, n);
-	print_stack(stack, size);
-
-	n = 4;
-	push(stack, &size, n);
-	print_stack(stack, size);
-
-	pop(&size);
-	print_stack(stack, size);
-
-
-	return 0;
-}
-
 
 void push(int stack[], int *size, int n)
 {
@@ -68,3 +36,33 @@ void print_stack(int stack[], int size)
 	return;
 
 }
+
+
+int main(void)
+{
+	
+	int n;
+
+	int size = 0;
+	int stack[MAX];
+
+	n = 3;
+	push(stack, &size, n);
+	print_stack(stack, size);
+
+	n = 1;
+	push(stack, &size, n);
+	print_stack(stack, size);
+
+	n = 4;
+	push(stack, &size, n);
+	print_stack(stack, size);
+
+	pop(&size);
+	print_stack(stack, size);
+
+
+	return 0;
+}
+
+
