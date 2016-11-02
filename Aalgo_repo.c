@@ -30,7 +30,6 @@ int length(int tree[][3], int arc_num, int s, int t)
   }
 
   return -1;
-
 }
 
 int distance(int prev[], int node, int tree[][3], int arc_num)
@@ -48,8 +47,8 @@ int distance(int prev[], int node, int tree[][3], int arc_num)
 int main(void)
 {
   int tree[][3] = {{0,1,1},{0,2,3},{1,2,1},{1,6,6},{2,3,6},{2,6,6},{2,7,3},
-                    {3,4,5},{3,7,2},{3,8,4},{4,8,2},{5,1,1},{6,5,7},{6,7,2},
-                     {7,8,1},{7,9,7},{8,9,5}};
+				   {3,4,5},{3,7,2},{3,8,4},{4,8,2},{5,1,1},{6,5,7},{6,7,2},
+				   {7,8,1},{7,9,7},{8,9,5}};
   int arc_num = sizeof(tree)/sizeof(tree[0]);
   int open[N];
   int closed[N] = {0};
@@ -66,13 +65,10 @@ int main(void)
 
     mindex = 0;
 
-    for (i = 1; i < size; i++)
-      {
-
+    for(i = 1; i < size; i++){
       	if (distance(prev, open[i], tree, arc_num) < distance(prev, open[mindex], tree, arc_num))
           mindex = i;
-
-        }
+	  }
 
     tmp = open[mindex];
     open[mindex] = open[size-1];
@@ -89,32 +85,29 @@ int main(void)
       return 0;
     }
 
-		for (i = 0; i < arc_num; i++)
-		{
-			if (tree[i][0] == top)
-			{
+	for(i = 0; i < arc_num; i++){
 
-				if (closed[tree[i][1]] == 0)
-				{
-					open[size++] = tree[i][1];
-					prev[tree[i][1]] = top;
+		if(tree[i][0] == top){
 
-					closed[tree[i][1]] = 1;
+			if(closed[tree[i][1]] == 0){
+				open[size++] = tree[i][1];
+				prev[tree[i][1]] = top;
 
-				}else if(closed[tree[i][1]] == 1){
-					if(distance(prev, i, tree, arc_num) + dist[i] > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]) + dist[top])
-						prev[tree[i][1]] = top;
-				}
+				closed[tree[i][1]] = 1;
 
+			  }else if(closed[tree[i][1]] == 1){
+			  if(distance(prev, i, tree, arc_num) + dist[i] > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]) + dist[top])
+				prev[tree[i][1]] = top;
 			}
 
-		}//END of for
+		  }
 
-	}//END of while
+	  }//END of for
 
-	printf("\nNG\n");
+  }//END of while
 
-	return 0;
+  printf("\nNG\n");
+
+  return 0;
 
 }//EOF
-
