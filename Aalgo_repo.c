@@ -15,8 +15,8 @@ void print_route(int prev[], int g)
   }
 
   printf("\n");
-  return;
 
+  return;
 }
 
 int length(int tree[][3], int arc_num, int s, int t)
@@ -40,12 +40,14 @@ int distance(int prev[], int node, int tree[][3], int arc_num)
     d += length(tree, arc_num, prev[tmp], tmp);
     tmp = prev[tmp];
   }
+
   return d;
 }
 
+
 int main(void)
 {
-  int tree[][3] = {{0,1,1},{0,2,3},{1,2,1},{1,6,6},{2,3,1},{2,6,6},{2,7,3},
+  int tree[][3] = {{0,1,1},{0,2,3},{1,2,1},{1,6,6},{2,3,6},{2,6,6},{2,7,3},
                     {3,4,5},{3,7,2},{3,8,4},{4,8,2},{5,1,1},{6,5,7},{6,7,2},
                      {7,8,1},{7,9,7},{8,9,5}};
   int arc_num = sizeof(tree)/sizeof(tree[0]);
@@ -67,30 +69,31 @@ int main(void)
     for (i = 1; i < size; i++)
       {
 
-      	if (distance(prev, open[i], tree, arc_num) + dist[open[i]]< distance(prev, open[mindex], tree, arc_num) + dist[open[mindex]])
+      	if (distance(prev, open[i], tree, arc_num) < distance(prev, open[mindex], tree, arc_num))
           mindex = i;
 
         }
-
 
     tmp = open[mindex];
     open[mindex] = open[size-1];
     open[size-1] = tmp;
 
-
     top = open[--size];
-    printf("%d,",top);
+    printf("%d,",top);  //openから取り出されたノードの表示
+
     if(top == goal){
+      printf("\n");
+      print_route(prev, goal);  //見つかった経路の表示
       printf("\nOK\n");
+
       return 0;
     }
-
-
 
 		for (i = 0; i < arc_num; i++)
 		{
 			if (tree[i][0] == top)
 			{
+
 				if (closed[tree[i][1]] == 0)
 				{
 					open[size++] = tree[i][1];
@@ -99,19 +102,19 @@ int main(void)
 					closed[tree[i][1]] = 1;
 
 				}else if(closed[tree[i][1]] == 1){
-					if(distance(prev, i, tree, arc_num) > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]))
+					if(distance(prev, i, tree, arc_num) + dist[i] > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]) + dist[top])
 						prev[tree[i][1]] = top;
 				}
 
 			}
 
-		}
+		}//END of for
 
-	}
+	}//END of while
 
 	printf("\nNG\n");
 
-	
 	return 0;
-}
+
+}//EOF
 
