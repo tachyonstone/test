@@ -66,9 +66,9 @@ int main(void)
     mindex = 0;
 
     for(i = 1; i < size; i++){
-      	if (distance(prev, open[i], tree, arc_num) < distance(prev, open[mindex], tree, arc_num))
-          mindex = i;
-	  }
+	  if (distance(prev, open[i], tree, arc_num) < distance(prev, open[mindex], tree, arc_num))
+		mindex = i;
+	}
 
     tmp = open[mindex];
     open[mindex] = open[size-1];
@@ -87,22 +87,22 @@ int main(void)
 
 	for(i = 0; i < arc_num; i++){
 
-		if(tree[i][0] == top){
+	  if(tree[i][0] == top){
 
-			if(closed[tree[i][1]] == 0){
-				open[size++] = tree[i][1];
-				prev[tree[i][1]] = top;
+		if(closed[tree[i][1]] == 0){
+		  open[size++] = tree[i][1];
+		  prev[tree[i][1]] = top;
 
-				closed[tree[i][1]] = 1;
+		  closed[tree[i][1]] = 1;
 
-			  }else if(closed[tree[i][1]] == 1){
-			  if(distance(prev, i, tree, arc_num) + dist[i] > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]) + dist[top])
-				prev[tree[i][1]] = top;
-			}
+		}else if(closed[tree[i][1]] == 1){
+		  if(distance(prev, i, tree, arc_num) + dist[i] > distance(prev, top, tree, arc_num)+length(tree, arc_num, tree[i][0], tree[i][1]) + dist[top])
+			prev[tree[i][1]] = top;
+		}
 
-		  }
+	  }
 
-	  }//END of for
+	}//END of for
 
   }//END of while
 
