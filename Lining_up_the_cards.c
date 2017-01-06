@@ -130,12 +130,12 @@ int main(void){
   int n[NUM_TIME];
   int k[NUM_TIME];
   int a[NUM_TIME][N_MAX+1];
-  int i,z,x;
+  int i,j;
   int end;
 
-  for(z=0; z<NUM_TIME; z++){
-	for(x=0; x<N_MAX+1; x++){
-	  a[z][x]=-1;
+  for(i=0; i<NUM_TIME; i++){
+	for(j=0; j<N_MAX+1; j++){
+	  a[i][j]=-1;
 	}
   }
 
