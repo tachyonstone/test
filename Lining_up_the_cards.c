@@ -1,35 +1,12 @@
 #include <stdio.h>
 
-#define BUFSIZE    512     //my define
-#define N_MAX       10     //max value of selected cards
-#define NUM_TIME    16     //my define
-#define PERM_MAX  5040     //10P4
-
-
-int InputCardInfo(int n[NUM_TIME], int k[NUM_TIME], int a[NUM_TIME][N_MAX+1]){
-  int i;
-  int z=0;
-
-  while(1){
-	scanf("%d", &n[z]);
-	scanf("%d", &k[z]);
-
-	if(n[z]==0 && k[z]==0){
-	  return z;
-	}
-
-	for(i=0; i<n[z]; i++){
-	  scanf("%d", &a[z][i]);
-	}
-
-	z++;
-  }
-
-}
+#define BUFSIZE 512 //my define
+#define N_MAX 10 //max value of selected cards
+#define PERM_MAX 5040 //10P4
 
 
 void RmOverlappingCards(char buffer[BUFSIZE], int *no){
-  int i=0;
+  int i;
   int flag=0;
   int figure[PERM_MAX];
 
@@ -41,6 +18,7 @@ void RmOverlappingCards(char buffer[BUFSIZE], int *no){
 	  break;
 	}
   }
+
   if(flag>0){
 	flag=0;
   }else{
@@ -50,52 +28,49 @@ void RmOverlappingCards(char buffer[BUFSIZE], int *no){
 }
 
 
-int LineUp(int n[NUM_TIME], int k[NUM_TIME], int a[NUM_TIME][N_MAX+1], int *t){
+int LineUp(int n, int k, int a[N_MAX+1]){
   int b1, b2, b3, b4;
   int i,j,l,m;
   char buffer[BUFSIZE];
   int figure[PERM_MAX]={0};
   int no=0;
-  int z;
 
-  z=*t;
-
-  for(i=0; i<n[z]; i++){  //lining up 2 cards
-	b1=a[z][i];
-	for(j=0; j<n[z]; j++){
+  for(i=0; i<n; i++){ //lining up 2 cards
+	b1=a[i];
+	for(j=0; j<n; j++){
 	  while(1){
 		if(j==i){
 		  j++;
 		}else{
-		  b2=a[z][j];
+		  b2=a[j];
 		  break;
 		}
 	  }
-	  if(b1>0 && b2>0 && k[z]==2){
+	  if(b1>0 && b2>0 && k==2){
 		sprintf(buffer,"%d%d", b1,b2);
 		RmOverlappingCards(buffer, &no);
 	  }
-	  if(k[z]>=3){  //lining up 3 cards
-		for(l=0; l<n[z]; l++){
+	  if(k>=3){ //lining up 3 cards
+		for(l=0; l<n; l++){
 		  while(1){
 			if(l==i || l==j){
 			  l++;
 			}else{
-			  b3=a[z][l];
+			  b3=a[l];
 			  break;
 			}
 		  }
-		  if(b1>0 && b2>0 && b3>0 && k[z]==3){
+		  if(b1>0 && b2>0 && b3>0 && k==3){
 			sprintf(buffer,"%d%d%d",b1,b2,b3);
 			RmOverlappingCards(buffer, &no);
 		  }
-		  if(k[z]>=4){  //lining up 4 cards
-			for(m=0; m<n[z]; m++){
+		  if(k>=4){ //lining up 4 cards
+			for(m=0; m<n; m++){
 			  while(1){
 				if(m==i || m==j || m==l){
 				  m++;
 				}else{
-				  b4=a[z][m];
+				  b4=a[m];
 				  break;
 				}
 			  }
@@ -116,22 +91,27 @@ int LineUp(int n[NUM_TIME], int k[NUM_TIME], int a[NUM_TIME][N_MAX+1], int *t){
 
 
 int main(void){
-  int n[NUM_TIME];
-  int k[NUM_TIME];
-  int a[NUM_TIME][N_MAX+1];
-  int i,j,t;
-  int end;
+  int n, k;
+  int a[N_MAX+1];
+  int i;
 
-  for(i=0; i<NUM_TIME; i++){
-	for(j=0; j<N_MAX+1; j++){
-	  a[i][j]=-1;
+  while(1){
+
+	for(i=0; i<N_MAX+1; i++){
+	  a[i]=-1;
 	}
-  }
 
-  end = InputCardInfo(n,k,a);
+	scanf("%d", &n);
+	scanf("%d", &k);
 
-  for(t=0; t<end; t++){
-	printf("%d\n", LineUp(n, k, a, &t));
+	if(n==0 && k==0){
+	  return 0;
+	}
+	for(i=0; i<n; i++){
+	  scanf("%d", &a[i]);
+	}
+
+	printf("%d\n", LineUp(n, k, a));
   }
 
   return 0;
