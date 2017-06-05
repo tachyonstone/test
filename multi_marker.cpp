@@ -1,4 +1,4 @@
-#include <windows.h>
+ï»¿#include <windows.h>
 #include <stdio.h>
 
 #include <GL/gl.h>
@@ -6,10 +6,11 @@
 #include <GL/glut.h>
 
 #include <AR/ar.h>
-#include <arMulti.h>
+#include <AR/arMulti.h>
 #include <AR/param.h>
 #include <AR/video.h>
 #include <AR/gsub.h>
+
 
 
 char *vconf_name = "Data/WDM_camera_flipV.xml";
@@ -35,7 +36,7 @@ int main(int argc, char **argv)
 	glutInit(&argc, argv);
 
 	if (arVideoOpen(vconf_name) < 0) {
-		printf("ƒrƒfƒIƒfƒoƒCƒX‚ÌƒGƒ‰[");
+		printf("ãƒ“ãƒ‡ã‚ªãƒ‡ãƒã‚¤ã‚¹ã®ã‚¨ãƒ©ãƒ¼");
 		return -1;
 
 	}
@@ -43,7 +44,7 @@ int main(int argc, char **argv)
 	if (arVideoInqSize(&xsize, &ysize) < 0)	return -1;
 
 	if (arParamLoad(cparam_name, 1, &wparam) < 0) {
-		printf("ƒJƒƒ‰ƒpƒ‰ƒ[ƒ^‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½\n");
+		printf("ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ã¾ã—ãŸ\n");
 		return -1;
 
 	}
@@ -52,13 +53,13 @@ int main(int argc, char **argv)
 	arInitCparam(&cparam);
 
 	if ((config = arMultiReadConfigFile(config_name)) == NULL) {
-		printf("ƒ}ƒ‹ƒ`ƒ}[ƒJ‚ÌÝ’èƒtƒ@ƒCƒ‹‚Ì“Ç‚Ýž‚Ý‚ÉŽ¸”s‚µ‚Ü‚µ‚½\n");
+		printf("ãƒžãƒ«ãƒãƒžãƒ¼ã‚«ã®è¨­å®šãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿ã«å¤±æ•—ã—ã¾ã—ãŸ\n");
 		return -1;
 	}
 
 	argInit(&cparam, 1.0, 0, 0, 0, 0);
 
-	arVideoCapStrt();
+	arVideoCapStart();
 
 	argMainLoop(NULL, KeyEvent, MainLoop);
 
@@ -68,7 +69,7 @@ int main(int argc, char **argv)
 
 void MainLoop(void)
 {
-	ARUnit8 *image;
+	ARUint8 *image;
 	ARMarkerInfo *marker_info;
 	int marker_num;
 	int i;
@@ -82,14 +83,14 @@ void MainLoop(void)
 	argDispImage(image, 0, 0);
 
 	if (arDetectMarker(image, thresh, &marker_info, &marker_num) < 0) {
-		Cleaneup();
+		Cleanup();
 		exit(0);
 	}
 
 	arVideoCapNext();
 
 	if (arMultiGetTransMat(marker_info, marker_num, config) >= 0) {
-		argDrawModel3D();
+		argDrawMode3D();
 		argDraw3dCamera(0, 0);
 
 		glClear(GL_DEPTH_BUFFER_BIT);
@@ -132,7 +133,7 @@ void mySetMaterial(void) {
 	glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
 	glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
 	glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
-	glMaterialfv(GL_FRONT, GL_SHININESS, mat_shininess);
+	glMaterialfv(GL_FRONT, GL_SHININESS, shininess);
 
 }
 
