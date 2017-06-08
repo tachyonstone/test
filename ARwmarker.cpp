@@ -10,6 +10,8 @@
 #include <AR/video.h>
 #include <AR/gsub.h>
 
+#include <math.h>
+
 char *vconf_name = "Data/WDM_camera_flipV.xml";
 char *cparam_name = "Data/camera_para.dat";
 char *patt_name1 = "Data/patt.marker1";
@@ -32,6 +34,16 @@ void MouseEvent(int button, int state, int x, int y);
 void Cleanup(void);
 void DrawObject1(void);
 void DrawObject2(void);
+void DrawObjectChange(void);
+
+
+
+int visible1;
+int visible2;
+double wmat1[3][4];
+double wmat2[3][4];
+
+double distance;
 
 int main(int argc, char **argv)
 {
@@ -88,6 +100,9 @@ void MainLoop(void)
 	int marker_num;
 	int j, k;
 
+	visible1 = 0;
+	visible2 = 0;
+
 	if ((image = (ARUint8 *)arVideoGetImage()) == NULL) {
 		arUtilSleep(2);
 		return;
@@ -122,8 +137,9 @@ void MainLoop(void)
 		//printf("%f, %f %f %f\n", marker_info[k], patt_center, patt_width, patt_trans[0][0]);
 
 		DrawObject1();
+		visible1 = 1;
 	}
-	
+
 
 	k = -1;
 	for (j = 0; j < marker_num; j++) {
@@ -141,21 +157,35 @@ void MainLoop(void)
 		//debug
 		//printf("%f, %f %f %f\n", marker_info[k], patt_center, patt_width, patt_trans[0][0]);
 
-		DrawObject2();
+		if (distance < 20) {
+			DrawObjectChange();
+		}else {
+
+			DrawObject2();
+			printf("dist2: %f\n", distance);
+
+		}
+		visible2 = 1;
 	}
 
 	argSwapBuffers();
 
 
+	if (visible1 > 0 && visible2 > 0) {
+		// マーカー1の座標系でカメラの位置を取得　
+		arUtilMatInv(patt_trans1, wmat1);
+		// マーカー1から見たマーカー2の位置を取得　
+		arUtilMatMul(wmat1, patt_trans2, wmat2);
+		printf("%5.3f %5.3f %5.3f\n", wmat2[0][3], wmat2[1][3], wmat2[2][3]);
 
-	if (object[0].visible > 0 && object[1].visible > 0) {
-			// マーカー1の座標系でカメラの位置を取得　
-			arUtilMatInv(object[0].trans, wmat1);
-			// マーカー1から見たマーカー2の位置を取得　
-			arUtilMatMul(wmat1, object[1].trans, wmat2);
-				printf("%5.3f %5.3f %5.3f\n", wmat2[0][3], wmat2[1][3], wmat2[2][3]);
-	}　
-}
+		distance = sqrt(pow(wmat2[0][3], 2) + pow(wmat2[1][3], 2) + pow(wmat2[2][2], 2)) / 10;
+		printf("distance : %f\n", distance);
+		if (distance < 20) {
+			DrawObjectChange();
+		}
+
+	}
+
 }
 
 
@@ -188,8 +218,32 @@ void DrawObject2(void)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixd(gl_para);
 
-	glTranslatef(0.0, 0.0, 20.0);
+	/*glTranslatef(0.0, 0.0, 20.0);
 	glColor3f(1.0, 0.0, 0.0);
+	glLineWidth(3.0);
+	glutWireCube(40.0);
+	*/
+
+	glPushMatrix();
+	glColor3f(0.1f, 0.1f, 1.0f);
+	glutSolidCone(10, 150, 10, 10);
+	glTranslatef(0.0f, 0.0f, 2.0f);
+	glPopMatrix();
+}
+
+void DrawObjectChange(void)
+{
+	double gl_para[16];
+
+	argDrawMode3D();
+	argDraw3dCamera(0, 0);
+
+	argConvGlpara(patt_trans2, gl_para);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixd(gl_para);
+
+	glTranslatef(0.0, 0.0, 20.0);
+	glColor3f(0.0, 0.0, 1.0);
 	glLineWidth(3.0);
 	glutWireCube(40.0);
 
