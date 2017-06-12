@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
+#include <stdlib.h>
+#include <cstdlib>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -11,6 +13,11 @@
 #include <AR/gsub.h>
 
 #include <math.h>
+
+#define WITHIN 200
+#define WITHIN2 40
+
+#define OBJECT_SIZE 80.0
 
 char *vconf_name = "Data/WDM_camera_flipV.xml";
 char *cparam_name = "Data/camera_para.dat";
@@ -34,8 +41,7 @@ void MouseEvent(int button, int state, int x, int y);
 void Cleanup(void);
 void DrawObject1(void);
 void DrawObject2(void);
-void DrawObjectChange(void);
-
+void DrawObjectChange(double , double);
 
 
 int visible1;
@@ -43,7 +49,13 @@ int visible2;
 double wmat1[3][4];
 double wmat2[3][4];
 
-double distance;
+double trans_x=0;
+double trans_y=0;
+
+double distance_x = 2000;
+double distance_y = 2000;
+double distance_tmp;
+double isDistance;
 
 int main(int argc, char **argv)
 {
@@ -87,6 +99,7 @@ int main(int argc, char **argv)
 	arVideoCapStart();
 
 	argMainLoop(MouseEvent, KeyEvent, MainLoop);
+
 
 	return 0;
 
@@ -157,12 +170,14 @@ void MainLoop(void)
 		//debug
 		//printf("%f, %f %f %f\n", marker_info[k], patt_center, patt_width, patt_trans[0][0]);
 
-		if (distance < 20) {
-			DrawObjectChange();
-		}else {
+		if (abs(distance_x) < WITHIN && abs(distance_y) < WITHIN) {
+
+			DrawObjectChange(trans_x,trans_y);
+		}
+		else {
 
 			DrawObject2();
-			printf("dist2: %f\n", distance);
+			printf("dist2: %f\n", distance_x);
 
 		}
 		visible2 = 1;
@@ -178,13 +193,41 @@ void MainLoop(void)
 		arUtilMatMul(wmat1, patt_trans2, wmat2);
 		printf("%5.3f %5.3f %5.3f\n", wmat2[0][3], wmat2[1][3], wmat2[2][3]);
 
-		distance = sqrt(pow(wmat2[0][3], 2) + pow(wmat2[1][3], 2) + pow(wmat2[2][2], 2)) / 10;
-		printf("distance : %f\n", distance);
-		if (distance < 20) {
-			DrawObjectChange();
+		//distance = sqrt(pow(wmat2[0][3]+trans_x, 2) + pow(wmat2[1][3]+trans_y, 2) + pow(wmat2[2][2], 2)) / 10;
+		//isDistance = distance - distance_tmp;
+
+		distance_x = wmat2[0][3] + trans_x;
+		distance_y = wmat2[1][3] + trans_y;
+
+		printf("wmat2[0][3] : %f, wmat2[1][3] : %f\n", wmat2[0][3], wmat2[1][3]);
+		if ((0<distance_x && distance_x < WITHIN) && abs(distance_y < WITHIN) && (abs(distance_y) < WITHIN2)) {
+			trans_x += WITHIN - distance_x;
+			DrawObjectChange(trans_x, trans_y);
+
+		}
+		else if ((-WITHIN < distance_x && distance_x < 0) && (abs(distance_y) < WITHIN) && (abs(distance_y) < WITHIN2)) {
+			trans_x = trans_x - (WITHIN + distance_x);
+			DrawObjectChange(trans_x, trans_y);
+		}
+		else if ((0<distance_y && distance_y < WITHIN) && abs(distance_x) < WITHIN && abs(distance_x) < WITHIN2) {
+			trans_y += WITHIN - distance_y;
+			DrawObjectChange(trans_x, trans_y);
+
+		}
+		else if ((-WITHIN < distance_y && distance_y < 0) && (abs(distance_x) < WITHIN) && abs(distance_x) < WITHIN2) {
+			trans_y = trans_y - (WITHIN + distance_y);
+			DrawObjectChange(trans_x, trans_y);
 		}
 
+		printf("distance_y:%f\n", distance_y);
+
 	}
+	else {
+		DrawObject2();
+
+	}
+
+
 
 }
 
@@ -203,7 +246,7 @@ void DrawObject1(void)
 	glTranslatef(0.0, 0.0, 20.0);
 	glColor3f(0.0, 1.0, 0.0);
 	glLineWidth(3.0);
-	glutWireCube(40.0);
+	glutWireCube(OBJECT_SIZE);
 
 }
 
@@ -218,34 +261,36 @@ void DrawObject2(void)
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixd(gl_para);
 
-	/*glTranslatef(0.0, 0.0, 20.0);
+	glTranslatef(trans_x , trans_y, 20.0);
 	glColor3f(1.0, 0.0, 0.0);
 	glLineWidth(3.0);
-	glutWireCube(40.0);
-	*/
+	glutWireCube(OBJECT_SIZE);
+	
 
-	glPushMatrix();
+	/*glPushMatrix();
 	glColor3f(0.1f, 0.1f, 1.0f);
 	glutSolidCone(10, 150, 10, 10);
 	glTranslatef(0.0f, 0.0f, 2.0f);
 	glPopMatrix();
+	*/
 }
 
-void DrawObjectChange(void)
+void DrawObjectChange(double, double)
 {
 	double gl_para[16];
 
 	argDrawMode3D();
 	argDraw3dCamera(0, 0);
 
+
 	argConvGlpara(patt_trans2, gl_para);
 	glMatrixMode(GL_MODELVIEW);
 	glLoadMatrixd(gl_para);
 
-	glTranslatef(0.0, 0.0, 20.0);
+	glTranslatef(trans_x, trans_y, 20.0);
 	glColor3f(0.0, 0.0, 1.0);
 	glLineWidth(3.0);
-	glutWireCube(40.0);
+	glutWireCube(OBJECT_SIZE);
 
 }
 
