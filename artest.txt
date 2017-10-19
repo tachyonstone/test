@@ -3,3 +3,7 @@ C:\Program Files (x86)\ARToolKit\include;C:\Program Files(x86)\Microsoft SDKs\Wi
 
 
 C:\Program Files (x86)\ARToolKit\lib;C:\Program Files(x86)\MicrosoftSDKs\Windows\v8.1A\Lib;C:\Program Files (x86)\ARToolKit\bin;C:\Program Files (x86)\ARToolKit\DSVL\lib;$(LibraryPath)
+
+
+
+libARd.lib;libARgsubd.lib;libARvideod.lib;glu32.lib;glut32.lib;legacy_stdio_definitions.lib;libARMultid.lib;ws2_32.lib;%(AdditionalDependencies)
