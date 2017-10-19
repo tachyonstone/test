@@ -1,1 +1,5 @@
 C:\Program Files (x86)\ARToolKit\include;C:\Program Files(x86)\Microsoft SDKs\Windows\v8.1A\Include;C:\Program Files (x86)\ARToolKit\bin;C:\Program Files (x86)\ARToolKit\DSVL\src;$(IncludePath)
+
+
+
+C:\Program Files (x86)\ARToolKit\lib;C:\Program Files(x86)\MicrosoftSDKs\Windows\v8.1A\Lib;C:\Program Files (x86)\ARToolKit\bin;C:\Program Files (x86)\ARToolKit\DSVL\lib;$(LibraryPath)
