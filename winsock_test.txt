@@ -1,0 +1,406 @@
+#include <WinSock2.h>
+#include <windows.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <cstdlib>
+
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glut.h>
+
+#include <AR/ar.h>
+#include <AR/param.h>
+#include <AR/video.h>
+#include <AR/gsub.h>
+
+#include <math.h>
+
+
+#define WITHIN 100
+#define WITHIN2 40  //plus minus 40mm
+#define WI 0
+
+#define OBJECT_SIZE 80.0
+
+char *vconf_name = "Data/WDM_camera_flipV.xml";
+char *cparam_name = "Data/camera_para.dat";
+char *patt_name1 = "Data/patt.marker1";
+char *patt_name2 = "Data/patt.marker2";
+
+int patt_id1;
+double patt_trans1[3][4];
+double patt_center1[2] = { 0.0, 0.0 };
+double patt_width1 = 80.0;
+
+int patt_id2;
+double patt_trans2[3][4];
+double patt_center2[2] = { 0.0, 0.0 };
+double patt_width2 = 80.0;
+int thresh = 100;
+
+void MainLoop(void);
+void KeyEvent(unsigned char key, int x, int y);
+void MouseEvent(int button, int state, int x, int y);
+void Cleanup(void);
+void DrawObject1(void);
+void DrawObject2(void);
+void DrawObjectChange(double , double);
+
+
+int visible1;
+int visible2;
+double wmat1[3][4];
+double wmat2[3][4];
+
+/* 仮想物体の座標 */
+int trans_x=0;
+int trans_y=200;  //-120
+
+int distance_x = 2000;
+int distance_y = 2000;
+double distance_tmp;
+double isDistance;
+
+int finger_x = -100;
+int finger_y = -100;
+int finger_z = -100;
+
+/*debug*/
+int finger_x_max = -100;
+
+SOCKET sock;
+
+int main(int argc, char **argv)
+{
+	ARParam cparam;
+	ARParam wparam;
+	int xsize, ysize;
+
+
+	printf("test\n");
+
+	glutInit(&argc, argv);
+
+	if (arVideoOpen(vconf_name) < 0) {
+		printf("ビデオデバイスのエラー");
+		return -1;
+
+	}
+
+	if (arVideoInqSize(&xsize, &ysize) < 0)	return -1;
+
+	if (arParamLoad(cparam_name, 1, &wparam) < 0) {
+		printf("カメラパラメータの読み込みに失敗しました\n");
+		return -1;
+
+	}
+
+	arParamChangeSize(&wparam, xsize, ysize, &cparam);
+	arInitCparam(&cparam);
+
+	if ((patt_id1 = arLoadPatt(patt_name1)) < 0) {
+		printf("パターンファイルの読み込みに失敗しました\n");
+		return -1;
+	}
+
+	if ((patt_id2 = arLoadPatt(patt_name2)) < 0) {
+		printf("パターンファイルの読み込みに失敗しました\n");
+		return -1;
+	}
+
+	argInit(&cparam, 1.0, 0, 0, 0, 0);
+
+	arVideoCapStart();
+
+
+	/* ネットワークプログラミング用変数 */
+	WSAData wsaData;
+	struct sockaddr_in addr;
+
+
+
+	/* ネットワークプログラミング開始 */
+	WSAStartup(MAKEWORD(2, 0), &wsaData);
+
+	sock = socket(AF_INET, SOCK_DGRAM, 0);
+
+	addr.sin_family = AF_INET;
+	addr.sin_port = htons(12345);
+	addr.sin_addr.S_un.S_addr = INADDR_ANY;
+
+	bind(sock, (struct sockaddr *)&addr, sizeof(addr));
+
+	// ここで、ノンブロッキングに設定しています。
+	// val = 0でブロッキングモードに設定できます。
+	// ソケットの初期設定はブロッキングモードです。
+	u_long val = 1;
+	ioctlsocket(sock, FIONBIO, &val);
+
+
+	argMainLoop(MouseEvent, KeyEvent, MainLoop);
+
+	/* ネットワークプログラミング終了 */
+	closesocket(sock);
+
+	WSACleanup();
+
+
+	return 0;
+
+}
+
+
+void MainLoop(void)
+{
+	ARUint8 *image;
+	ARMarkerInfo *marker_info;
+	int marker_num;
+	int j, k;
+
+	char buf[2048];
+
+	int n;
+
+
+
+	memset(buf, 0, sizeof(buf));
+	
+	n = recv(sock, buf, sizeof(buf), 0);
+
+		if (n < 1) {
+			if (WSAGetLastError() == WSAEWOULDBLOCK) {
+				// まだ来ない。
+				printf("MADA KONAI\n");
+			}
+			else {
+				printf("error : 0x%x\n", WSAGetLastError());
+				//break;
+			}
+		}
+		else {
+			//printf("received data\n");
+			printf("%s\n", buf);
+
+			sscanf(buf, "%d %d %d", &finger_x, &finger_y, &finger_z);
+			printf("x : %d, y : %d, z : %d\n", finger_x, finger_y, finger_z);
+			
+			/* ARToolKitの座標系に変換 */
+			//finger_x = -finger_x;
+			finger_y = finger_z;
+
+			if (finger_x > finger_x_max) {
+				finger_x_max = finger_x;
+			}
+			printf("max:%d\n", finger_x_max);
+
+		}
+
+	visible2 = 0;
+
+	if ((image = (ARUint8 *)arVideoGetImage()) == NULL) {
+		arUtilSleep(2);
+		return;
+
+	}
+
+	argDrawMode2D();
+	argDispImage(image, 0, 0);
+
+	if (arDetectMarker(image, thresh, &marker_info, &marker_num) < 0) {
+		Cleanup();
+		exit(0);
+
+	}
+
+	arVideoCapNext();
+
+
+	k = -1;
+	for (j = 0; j < marker_num; j++) {
+		if (patt_id2 == marker_info[j].id) {
+			if (k == -1) k = j;
+			else if (marker_info[k].cf < marker_info[j].cf) k = j;
+
+		}
+	}
+
+	if (k != -1) {
+		arGetTransMat(&marker_info[k], patt_center2, patt_width2, patt_trans2);
+
+		//debug
+		//printf("%f, %f %f %f\n", marker_info[k], patt_center, patt_width, patt_trans[0][0]);
+
+		//if (abs(distance_x) < WITHIN && abs(distance_y) < WITHIN) {
+		if( n >= 0 && (-WITHIN < finger_y && finger_y < WITHIN) && (-40 + trans_x < finger_x) && finger_x < trans_x ){
+			//trans_x = finger_x + 40;
+			trans_x += 5;
+			DrawObjectChange(trans_x, trans_y);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x, trans_x, trans_y);
+			printf("************left***********\n");
+			
+		}
+
+		else if (n >= 0 && (-WITHIN < finger_y && finger_y < WITHIN) && (finger_x < trans_x + 40) && finger_x > trans_x) {
+			//trans_x = finger_x - 40;
+			trans_x -= 5;
+			DrawObjectChange(trans_x, trans_y);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x, trans_x, trans_y);
+			printf("*********right***************\n");
+			
+
+		}
+		else {
+
+			DrawObject2();
+			//printf("dist2: %f\n", distance_x);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x, trans_x, trans_y);
+
+		}
+		
+		
+		visible2 = 1;
+	}
+
+	argSwapBuffers();
+
+
+	////////
+
+	/* 仮想物体の移動中にも表示 */	
+	if (n >= 0 && visible2 > 0) {
+
+		printf("t_x:%d, t_y:%d\n", trans_x, trans_y);
+		//printf("distance_x:%d\n", distance_x);
+
+		distance_x = trans_x;
+		//distance_y = trans_y;
+
+		//printf("wmat2[0][3] : %f, wmat2[1][3] : %f\n", wmat2[0][3], wmat2[1][3]);
+		if ((-WITHIN < finger_y && finger_y < WITHIN) && (-WITHIN+trans_x < finger_x) && finger_x < trans_x ) { //finger_x < trans_x は突発的な値を除く
+			//trans_x = finger_x+40;
+			trans_x += 5;
+			DrawObjectChange(trans_x, trans_y);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x, trans_x, trans_y);
+
+		}
+		else if (n >= 0 && (-WITHIN < finger_y && finger_y < WITHIN) && (finger_x < trans_x + 40) && finger_x > trans_x) {
+			//trans_x = finger_x - 40;
+			trans_x -= 5;
+			DrawObjectChange(trans_x, trans_y);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x, trans_x, trans_y);
+
+		}
+		/*
+		else if ((-140 < finger_y && finger_y < 140) && (-40 < finger_x && finger_x < 100) && (distance_x > finger_x)) {
+			trans_x = finger_x + 40;
+			DrawObjectChange(trans_x, trans_y);
+			printf("finger_x:%d, trans_x:%d, trans_y:%d\n", finger_x + 40, trans_x, trans_y);
+
+		}
+		else if ((0<distance_y && distance_y < WITHIN) && abs(distance_x) < WITHIN && abs(distance_x) < WITHIN2) {
+			trans_y += WITHIN - distance_y;
+			DrawObjectChange(trans_x, trans_y);
+
+		}
+		else if ((-WITHIN < distance_y && distance_y < 0) && (abs(distance_x) < WITHIN) && abs(distance_x) < WITHIN2) {
+			trans_y = trans_y - (WITHIN + distance_y);
+			DrawObjectChange(trans_x, trans_y);
+		}*/
+
+		//printf("distance_y:%f\n", distance_y);
+
+	}
+	else {
+		//DrawObject2();
+
+	}
+
+	/////
+}
+
+
+void DrawObject1(void)
+{
+	double gl_para[16];
+
+	argDrawMode3D();
+	argDraw3dCamera(0, 0);
+
+	argConvGlpara(patt_trans1, gl_para);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixd(gl_para);
+
+	glTranslatef(0.0, 0.0, 20.0);
+	glColor3f(0.0, 1.0, 0.0);
+	glLineWidth(3.0);
+	glutWireCube(OBJECT_SIZE);
+
+}
+
+void DrawObject2(void)
+{
+	double gl_para[16];
+
+	argDrawMode3D();
+	argDraw3dCamera(0, 0);
+
+	argConvGlpara(patt_trans2, gl_para);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixd(gl_para);
+
+	glTranslatef(trans_x, trans_y, 20.0);
+	glColor3f(1.0, 0.0, 0.0);
+	glLineWidth(3.0);
+	glutWireCube(OBJECT_SIZE);
+	
+
+	/*glPushMatrix();
+	glColor3f(0.1f, 0.1f, 1.0f);
+	glutSolidCone(10, 150, 10, 10);
+	glTranslatef(0.0f, 0.0f, 2.0f);
+	glPopMatrix();
+	*/
+}
+
+void DrawObjectChange(double, double)
+{
+	double gl_para[16];
+
+	argDrawMode3D();
+	argDraw3dCamera(0, 0);
+
+
+	argConvGlpara(patt_trans2, gl_para);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadMatrixd(gl_para);
+
+	glTranslatef(trans_x, trans_y, 20.0);
+	glColor3f(0.0, 0.0, 1.0);
+	glLineWidth(3.0);
+	glutWireCube(OBJECT_SIZE);
+
+}
+
+void KeyEvent(unsigned char key, int x, int y)
+{
+	if (key == 0x1b) {
+		Cleanup();
+		exit(0);
+
+	}
+}
+
+void MouseEvent(int button, int state, int x, int y)
+{
+	printf("ボタン:%d 状態:%d 座標:(x, y) = (%d, %d) \n", button, state, x, y);
+
+}
+
+
+void Cleanup(void)
+{
+	arVideoCapStop();
+	arVideoClose();
+	argCleanup();
+
+}
